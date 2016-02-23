@@ -10,25 +10,29 @@ app.get('/', function(req, res) {
 	res.sendFile(__dirname + '/public/index.html');
 });
 
+var users = {};
+
 io.on('connection', function(socket) {
-  socket.broadcast.emit('connection message', 'A user connected.');
+  io.emit('user connection', users);
 	socket.on('disconnect', function() {
     if (socket.nickname) {
-      socket.broadcast.emit('disconnect message', socket.nickname + ' disconnected');
-    } else
-      socket.broadcast.emit('disconnect message', 'A user disconnected.');
+      users[socket.nickname] = 'offline';
+      socket.broadcast.emit('disconnect message', socket.nickname);
     }
 	});
 	socket.on('chat message', function(msg) {
-    if (socket.nickname) {
-      io.emit('chat message', '<span class="nickname">' + socket.nickname + '</span> ' + msg);
-    } else {
-      io.emit('chat message', '<span class="nickname">anonymous</span> ' + msg);
+    if (msg) {
+      if (socket.nickname) {
+        io.emit('chat message', '<span class="nickname">' + socket.nickname + '</span> ' + msg);
+      } else {
+        io.emit('chat message', '<span class="nickname">anonymous</span> ' + msg);
+      }
     }
 	});
   socket.on('add nickname', function(nickname) {
+    users[nickname] = 'online';
     socket.nickname = nickname;
-    socket.broadcast.emit('nickname added', socket.nickname);
+    io.emit('nickname added', nickname);
   });
 });
 

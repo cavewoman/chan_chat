@@ -5,7 +5,7 @@
     <style>
 			* { margin: 0; padding: 0; box-sizing: border-box; }
       body { font: 13px Helvetica, Arial; }
-      form { padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      #message-input { padding: 3px; position: fixed; bottom: 0; width: 100%; }
       form button { background: rgb(130, 224, 255); border: none; padding: 10px; }
       #messages { list-style-type: none; margin: 0; padding: 0; }
       #messages li { padding: 5px 10px; }
@@ -16,21 +16,33 @@
     <meta name="viewport" content="initial-scale=1, maximum-scale=1, width=device-width">
   </head>
 	<body>
-    <div class="input-group">
-      <input id="nickname" type="text" class='form-control' placeholder="Type your nickname here"/>
-      <div class='input-group-btn'>
-        <button id="nickname-button" class="btn btn-default">Add Nickname</button>
-      </div>
-    </div>
-		<ul id="messages"></ul>
-		<form action="" class="form-horizontal">
-      <div class="input-group">
-        <input id="m" autocomplete="off" type="text" class="form-control"/>
-        <div class="input-group-btn">
-          <button class="btn btn-default">Send</button>
+    <form action"" class="form-horizontal">
+      <div id='nickname-entry-form' class="input-group">
+        <input id="nickname" type="text" class='form-control' placeholder="Type your nickname here"/>
+        <div class='input-group-btn'>
+          <button id="nickname-button" class="btn btn-default">Add Nickname</button>
         </div>
       </div>
-		</form>
+    </form>
+    <div class='chat-page' style="display: none">
+      <div class="row">
+        <div class="col-xs-3 col-md-3 col-lg-3" style="text-align: center">
+          <h5>Online Users</h5>
+          <ul id="online-users"></ul>
+        </div>
+        <div class="col-xs-9 col-md-9 col-lg-9">
+          <ul id="messages"></ul>
+        </div>
+      </div>
+      <form action="" class="form-horizontal" id="message-input">
+        <div class="input-group">
+          <input id="m" autocomplete="off" type="text" class="form-control"/>
+          <div class="input-group-btn">
+            <button class="btn btn-default">Send</button>
+          </div>
+        </div>
+      </form>
+    </div>
 
 		<script src="/socket.io/socket.io.js"></script>
 		<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
@@ -45,25 +57,38 @@
       $('#nickname-button').on('click', function() {
         var nickname = $('#nickname').val().trim();
         if (nickname) {
+          $('#nickname-entry-form').hide();
+          $('.chat-page').show();
           socket.emit('add nickname', nickname);
         }
       });
 
-      function sendMessage(msg) {
-        $('#messages').append('<li>'+msg+'</li>');
+      function sendMessage(msg, center) {
+        var message = center ? '<li style="text-align: center">' + msg + '</li>' : '<li>' + msg + '</li>';
+        $('#messages').append(message);
       }
 
 			socket.on('chat message', function(msg) {
         sendMessage(msg);
 			});
-      socket.on('connection message', function(msg) {
-        sendMessage(msg);
+      socket.on('user connection', function(users) {
+        var names = Object.keys(users);
+        for(var i=0; i < names.length; i++){
+          if (users[names[i]] == 'online') {
+            $('#online-users li:contains('+names[i]+')').remove();
+            $('#online-users').append($('<li>').text(names[i]))
+          }
+        }
       });
-      socket.on('disconnect message', function(msg) {
-        sendMessage(msg);
+      socket.on('disconnect message', function(nickname) {
+        $('#online-users li:contains('+nickname+')').remove();
+        var msg = nickname + ' disconnected.';
+        sendMessage(msg, true);
       });
-      socket.on('nickname added', function(name) {
-        sendMessage('A user has changed their name to ' + name);
+      socket.on('nickname added', function(nickname) {
+        var msg = '<span class="joined-message">' + nickname + ' has joined.</span>';
+        $('#online-users').append($('<li>').text(nickname));
+        sendMessage(msg, true);
       });
 		</script>
 	</body>
