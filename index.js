@@ -1,7 +1,9 @@
-var app = require('express')(),
+var express = require('express'),
+    app = express(),
     http = require('http').Server(app),
 		io = require('socket.io')(http);
 
+app.use(express.static('public'));
 app.get('/chat', function(req, res) {
   res.sendFile(__dirname + '/public/chat.html');
 });
