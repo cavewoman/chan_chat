@@ -75,7 +75,13 @@
 			socket.on('centered chat message', function(msg) {
         sendMessage(msg, true);
 			});
-      socket.on('user connection', function(users) {
+      socket.on('user connection', function(users, messages) {
+        if(messages) {
+          $('#messages').empty();
+          for(var i=0; i<messages.length; i++) {
+            sendMessage(messages[i].message, messages[i].centered);
+          }
+        }
         var names = Object.keys(users);
         for(var i=0; i < names.length; i++){
           if (users[names[i]] == 'online') {
@@ -85,7 +91,13 @@
         }
       });
       // listener, whenever the server emits 'updaterooms', this updates the room the client is in
-      socket.on('updaterooms', function(rooms, current_room) {
+      socket.on('updaterooms', function(rooms, current_room, messages) {
+        if(messages) {
+          $('#messages').empty();
+          for(var i=0; i<messages.length; i++) {
+            sendMessage(messages[i].message, messages[i].centered);
+          }
+        }
         $('#rooms').empty();
         $.each(rooms, function(key, value) {
           if(value == current_room){
@@ -99,13 +111,11 @@
       function switchRoom(room){
         socket.emit('switchRoom', room);
       }
-      socket.on('disconnect message', function(nickname) {
+      socket.on('disconnect message', function(nickname, msg) {
         $('#online-users li:contains('+nickname+')').remove();
-        var msg = nickname + ' disconnected.';
         sendMessage(msg, true);
       });
-      socket.on('nickname added', function(nickname) {
-        var msg = '<span class="joined-message">' + nickname + ' has joined.</span>';
+      socket.on('nickname added', function(nickname, msg) {
         $('#online-users').append($('<li>').text(nickname));
         sendMessage(msg, true);
       });

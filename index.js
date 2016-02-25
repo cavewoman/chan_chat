@@ -14,22 +14,23 @@ app.get('/', function(req, res) {
 
 var users = {};
 var rooms = ['general', 'keyboards', 'skateboarding', 'random'];
+var messages = {};
+rooms.forEach(function(room) {
+  messages[room] = [];
+});
 
 io.on('connection', function(socket) {
-  io.sockets.emit('user connection', users);
+  io.sockets.emit('user connection', users, messages['general']);
 	socket.on('disconnect', function() {
-    if (socket.nickname) {
-      users[socket.nickname] = 'offline';
-      socket.broadcast.emit('disconnect message', socket.nickname);
-    }
+    users[socket.nickname] = 'offline';
+    var msg = socket.nickname + ' disconnected.';
+    socket.broadcast.emit('disconnect message', socket.nickname, msg);
 	});
 	socket.on('chat message', function(msg) {
     if (msg) {
-      if (socket.nickname) {
-        io.sockets.in(socket.room).emit('chat message', '<span class="nickname">' + socket.nickname + '</span> ' + msg);
-      } else {
-        io.sockets.in(socket.room).emit('chat message', '<span class="nickname">anonymous</span> ' + msg);
-      }
+      var message = '<span class="nickname">' + socket.nickname + '</span> ' + msg;
+      messages[socket.room].push({ message: message, centered: false });
+      io.sockets.in(socket.room).emit('chat message', message);
     }
 	});
   socket.on('add nickname', function(nickname) {
@@ -39,18 +40,24 @@ io.on('connection', function(socket) {
     socket.join('general');
     socket.emit('updaterooms', rooms, 'general');
     socket.emit('centered chat message', 'You have connected to general');
-    io.sockets.emit('nickname added', nickname);
+    var msg = '<span class="joined-message">' + socket.nickname + ' has joined.</span>';
+    messages['general'].push({ message: msg, centered: true });
+    io.sockets.emit('nickname added', nickname, msg);
   });
 	socket.on('switchRoom', function(newroom){
 		socket.leave(socket.room);
 		socket.join(newroom);
 		socket.emit('centered chat message', 'You have connected to '+ newroom);
 		// sent message to OLD room
+    var leaveMessage = socket.nickname + ' has left ' + socket.room;
+    messages[socket.room].push({ message: leaveMessage, centered: true });
 		socket.broadcast.to(socket.room).emit('centered chat message', socket.nickname+' has left '+socket.room);
 		// update socket session room title
 		socket.room = newroom;
+    var joinMessage = socket.nickname + ' has joined ' + newroom;
+    messages[newroom].push({message: joinMessage, centered: true});
 		socket.broadcast.to(newroom).emit('centered chat message', socket.nickname+' has joined '+newroom);
-		socket.emit('updaterooms', rooms, newroom);
+		socket.emit('updaterooms', rooms, newroom, messages[newroom]);
 	});
 });
 
