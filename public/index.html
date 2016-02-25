@@ -14,7 +14,6 @@
 			</div>
 			<form id="tag-form" class="form">
 				<div><input type="text" placeholder="Enter Name" id="nickname" required/></div>
-		
 				<div><button type="submit" id='nickname-button'>Join<i class="fa fa-arrow-right"></i></button></div>
 			</form>
 			<div class="underbar"></div>
@@ -22,8 +21,14 @@
     <div class='chat-page' style="display: none">
       <div class="row">
         <div class="col-xs-3 col-md-3 col-lg-3" style="text-align: center">
-          <h5>Online Users</h5>
-          <ul id="online-users"></ul>
+          <div class="row">
+            <h5><b>Online Users</b></h5>
+            <ul id="online-users"></ul>
+          </div>
+          <div class='row'>
+            <h5><b>Rooms</b></h5>
+            <ul id="rooms"></ul>
+          </div>
         </div>
         <div class="col-xs-9 col-md-9 col-lg-9">
           <ul id="messages"></ul>
@@ -66,6 +71,9 @@
 			socket.on('chat message', function(msg) {
         sendMessage(msg);
 			});
+			socket.on('centered chat message', function(msg) {
+        sendMessage(msg, true);
+			});
       socket.on('user connection', function(users) {
         var names = Object.keys(users);
         for(var i=0; i < names.length; i++){
@@ -75,6 +83,21 @@
           }
         }
       });
+      // listener, whenever the server emits 'updaterooms', this updates the room the client is in
+      socket.on('updaterooms', function(rooms, current_room) {
+        $('#rooms').empty();
+        $.each(rooms, function(key, value) {
+          if(value == current_room){
+            $('#rooms').append($('<li>').text(value));
+          }
+          else {
+            $('#rooms').append('<li><a href="#" onclick="switchRoom(\''+value+'\')">' + value + '</a></li>');
+          }
+        });
+      });
+      function switchRoom(room){
+        socket.emit('switchRoom', room);
+      }
       socket.on('disconnect message', function(nickname) {
         $('#online-users li:contains('+nickname+')').remove();
         var msg = nickname + ' disconnected.';
