@@ -9,6 +9,8 @@ form button { background: rgb(130, 224, 255); border: none; padding: 10px; }
 #messages li:nth-child(odd) { background: #eee; }
 .nickname { font-weight: bold; font-size: smaller; }
 
+#chat-log { height: 93%; overflow: scroll; }
+
 .name-tag {
   position: relative;
   margin: 90px auto;
