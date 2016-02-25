@@ -1,4 +1,4 @@
-# chat_app
+# chan_chat
 
 #### Requirements
 * Nodejs/npm
